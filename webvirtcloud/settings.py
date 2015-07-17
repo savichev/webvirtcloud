@@ -8,9 +8,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 SECRET_KEY = '4y(f4rfqc6f2!i8_vfuu)kav6tdv5#sc=n%o451dm+th0&3uci'
 
-DEBUG = False
+#DEBUG = False
+DEBUG = True
+TEMPLATE_DEBUG = True
 
-TEMPLATE_DEBUG = DEBUG
+#TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = ['*']
 
@@ -103,3 +105,5 @@ QEMU_KEYMAPS = ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
 # keepalive interval and count for libvirt connections
 LIBVIRT_KEEPALIVE_INTERVAL = 5
 LIBVIRT_KEEPALIVE_COUNT = 5
+
+SCREENSHOT_PATH = os.path.join(BASE_DIR, "static/screenshots")

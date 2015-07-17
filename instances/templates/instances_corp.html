@@ -158,7 +158,39 @@
                                         <tbody class="searchable">
                                             {% for inst, vm in all_user_vms.items %}
                                                 <tr>
-                                                    <td><a href="{% url 'instance' vm.compute_id vm.name %}">{{ vm.name }}</a></td>
+                                                    <td>{% ifequal vm.status 1 %}<div class="caption"><h>{{ vm.name }} <span class="label label-success">Active</span></h></div>{% endifequal %}
+                                                        {% ifequal vm.status 3 %}<div class="caption"><h>{{ vm.name }} <span class="label label-warning">Suspend</span></h></div>{% endifequal %}
+                                                        {% ifequal vm.status 5 %}<div class="caption"><h>{{ vm.name }} <span class="label label-danger">Off</span></h></div>{% endifequal %}
+                                                        <form action="" method="post" role="form">{% csrf_token %}
+                                                          <input type="hidden" name="name" value="{{ vm.name }}"/>
+                                                          <input type="hidden" name="compute_id" value="{{ vm.compute_id }}"/>
+                                                          {% if vm.status == 1 %}
+                                                          <button class="thumbnail" type="submit" name="getvvfile" title="{% trans "Connect to VM" %}">
+                                                            <span><img src="{% static 'screenshots' %}/{{ vm.name }}.png" alt=""></span>
+                                                          </button>
+                                                          {% endif %}
+                                                          {% if vm.status == 3 %}
+                                                              <button class="thumbnail" type="submit" name="poweron" title="{% trans "CPower on VM" %}" onclick="return confirm('VM is SUSPEND. Power on VM?')">
+                                                                <span><img src="{% static 'screenshots' %}/vm_is_suspend.png" alt=""></span>
+                                                              </button>
+                                                          {% endif %}
+                                                          {% if vm.status == 5 %}
+                                                              <button class="thumbnail" type="submit" name="poweron" title="{% trans "Power on VM" %}" onclick="return confirm('VM is OFF. Power on VM?')">
+                                                                  <span><img src="{% static 'screenshots' %}/vm_is_off.png" alt=""></span>
+                                                              </button>
+                                                          {% endif %}
+                                                          <button class="btn btn-sm btn-default{% if vm.status == 1 %} disabled{% endif %}" type="submit" name="poweron" title="{% trans "Power On" %}">
+                                                                    <span class="glyphicon glyphicon-play"></span>
+                                                          </button>
+                                                          <button class="btn btn-sm btn-default{% if vm.status == 3 or vm.status == 5 %} disabled{% endif %}" type="submit" name="poweroff" title="{% trans "Power Off" %}" onclick="return confirm('Are you sure?')">
+                                                            <span class="glyphicon glyphicon-off"></span>
+                                                          </button>
+                                                          <button class="btn btn-sm btn-default{% if vm.status == 3 or vm.status == 5 %} disabled{% endif %}" type="submit" name="powercycle" title="{% trans "Power Cycle" %}" onclick="return confirm('Are you sure?')">
+                                                                    <span class="glyphicon glyphicon-refresh"></span>
+                                                          </button>
+                                                        </form>
+                                                    </td>
+
                                                     <td>{% ifequal vm.status 1 %}
                                                             <span class="text-success">{% trans "Active" %}</span>
                                                         {% endifequal %}
@@ -223,9 +255,9 @@
                                                                 <a href="#" class="btn btn-sm btn-default" onclick='open_console("{{ vm.compute_id }}-{{ vm.uuid }}")' title="{% trans "Console" %}">
                                                                     <span class="glyphicon glyphicon-eye-open"></span>
                                                                 </a>
-                                                                <button class="btn btn-sm btn-default" type="submit" name="getvvfile" title="{% trans "Open Application" %}">
+                                                                <a href="#" class="btn btn-sm btn-default" onclick='connect_vm()' title="{% trans "Open Application" %}">
                                                                     <span class="glyphicon glyphicon-film"></span>
-                                                                </button>
+                                                                </a>
                                                             {% endifequal %}
                                                         </form>
                                                     </td>
@@ -244,6 +276,9 @@
 <script>
     function open_console(uuid) {
         window.open("{% url 'console' %}?token=" + uuid, "", "width=850,height=485");
+    }
+    function connect_vm(uuid) {
+        window.open("data:application/x-virt-viewer;charset=utf-8;base64," + btoa(str));
     }
 </script>
 <script>

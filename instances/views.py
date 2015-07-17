@@ -57,6 +57,8 @@ def instances(request):
                                       usr_inst.instance.compute.type)
                 all_user_vms[usr_inst] = conn.get_user_instances(usr_inst.instance.name)
                 all_user_vms[usr_inst].update({'compute_id': usr_inst.instance.compute.id})
+
+                conn.get_user_instances_screenshot(usr_inst.instance.name)
     else:
         for comp in computes:
             if connection_manager.host_is_up(comp.type, comp.hostname):
@@ -69,12 +71,18 @@ def instances(request):
                                 check_uuid = Instance.objects.get(compute_id=comp.id, name=vm)
                                 if check_uuid.uuid != info['uuid']:
                                     check_uuid.save()
+                                #p = dict('guestname=' + vm, screen='0', filename='static/screenshots/' + vm, uri='qemu:///system')
+                                #conn.get_user_instances_screenshot(vm,0,'/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + vm)
+                                #conn.get_screenshot(p)
                             except Instance.DoesNotExist:
                                 check_uuid = Instance(compute_id=comp.id, name=vm, uuid=info['uuid'])
                                 check_uuid.save()
                     conn.close()
                 except libvirtError as lib_err:
                     error_messages.append(lib_err)
+
+        #conn.get_user_instances_screenshot(usr_inst.instance.name, 0, '/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + usr_inst.instance.name)
+
 
     if request.method == 'POST':
         name = request.POST.get('name', '')
@@ -85,6 +93,13 @@ def instances(request):
                                 instance.compute.login,
                                 instance.compute.password,
                                 instance.compute.type)
+
+            #Get screenshots VM
+            #p = dict('guestname=' + instance.name, screen='0', filename='static/screenshots/' + instance.name, uri='qemu:///system')
+            #conn.get_screenshot(p)
+
+            #conn.get_user_instances_screenshot(conn, instance.name, 0, '/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + instance.name)
+
             if 'poweron' in request.POST:
                 msg = _("Power On")
                 addlogmsg(request.user.username, instance.name, msg)
@@ -104,6 +119,27 @@ def instances(request):
                 addlogmsg(request.user.username, instance.name, msg)
                 return HttpResponseRedirect(request.get_full_path())
 
+            if 'getvvfile' in request.POST:
+                msg = _("Send console.vv file")
+                addlogmsg(request.user.username, instance.name, msg)
+                response = HttpResponse(content='', content_type='application/x-virt-viewer', status=200, reason=None, charset='utf-8')
+                response.writelines('[virt-viewer]\n')
+                response.writelines('version=0.5.6\'.\'1.0.0\'.\'2.0.0\n')
+                response.writelines('type=' + conn.graphics_type(name) + '\n')
+                response.writelines('host=' + conn.graphics_listen(name) + '\n')
+                response.writelines('port=' + conn.graphics_port(name) + '\n')
+                response.writelines('title=' + conn.domain_name(name) + '\n')
+                response.writelines('password=' + conn.graphics_passwd(name) + '\n')
+                response.writelines('enable-usbredir=0\n')
+                response.writelines('disable-effects=all\n')
+                response.writelines('secure-attention=ctrl+alt+ins\n')
+                response.writelines('release-cursor=ctrl+alt\n')
+                response.writelines('fullscreen=1\n')
+                response.writelines('delete-this-file=1\n')
+                response['Content-Disposition'] = 'attachment; filename="console.vv"'
+                return response
+
+
             if request.user.is_superuser:
 
                 if 'suspend' in request.POST:
@@ -122,7 +158,7 @@ def instances(request):
             error_messages.append(lib_err)
             addlogmsg(request.user.username, instance.name, lib_err.message)
 
-    return render(request, 'instances.html', locals())
+    return render(request, 'instances_corp.html', locals())
 
 
 def instance(request, compute_id, vname):
@@ -194,6 +230,8 @@ def instance(request, compute_id, vname):
         if cur_memory not in memory_range:
             insort(memory_range, cur_memory)
         memory_host = conn.get_max_memory()
+#	video = conn.get_video_type()
+#        video_range = ['cirrus', 'std', 'vmware ', 'qxl']
         vcpu_host = len(vcpu_range)
         telnet_port = conn.get_telnet_port()
         console_type = conn.get_console_type()
@@ -319,7 +357,8 @@ def instance(request, compute_id, vname):
                 cur_memory_custom = request.POST.get('cur_memory_custom', '')
                 if cur_memory_custom:
                     cur_memory = cur_memory_custom
-                conn.resize(cur_memory, memory, cur_vcpu, vcpu)
+                video = request.POST.get('video', '')
+                conn.resize(cur_memory, memory, cur_vcpu, vcpu, video)
                 msg = _("Resize")
                 addlogmsg(request.user.username, instance.name, msg)
                 return HttpResponseRedirect(request.get_full_path() + '#resize')
