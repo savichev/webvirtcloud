@@ -71,18 +71,13 @@ def instances(request):
                                 check_uuid = Instance.objects.get(compute_id=comp.id, name=vm)
                                 if check_uuid.uuid != info['uuid']:
                                     check_uuid.save()
-                                #p = dict('guestname=' + vm, screen='0', filename='static/screenshots/' + vm, uri='qemu:///system')
-                                #conn.get_user_instances_screenshot(vm,0,'/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + vm)
-                                #conn.get_screenshot(p)
+                                    
                             except Instance.DoesNotExist:
                                 check_uuid = Instance(compute_id=comp.id, name=vm, uuid=info['uuid'])
                                 check_uuid.save()
                     conn.close()
                 except libvirtError as lib_err:
                     error_messages.append(lib_err)
-
-        #conn.get_user_instances_screenshot(usr_inst.instance.name, 0, '/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + usr_inst.instance.name)
-
 
     if request.method == 'POST':
         name = request.POST.get('name', '')
@@ -93,12 +88,6 @@ def instances(request):
                                 instance.compute.login,
                                 instance.compute.password,
                                 instance.compute.type)
-
-            #Get screenshots VM
-            #p = dict('guestname=' + instance.name, screen='0', filename='static/screenshots/' + instance.name, uri='qemu:///system')
-            #conn.get_screenshot(p)
-
-            #conn.get_user_instances_screenshot(conn, instance.name, 0, '/home/arez/PycharmProjects/webvirtcloud/static/screenshot_vms/' + instance.name)
 
             if 'poweron' in request.POST:
                 msg = _("Power On")
